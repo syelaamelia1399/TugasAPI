@@ -1,6 +1,7 @@
 ﻿using API.Context;
 using API.Handlers;
 using API.Models;
+using API.Repositories.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,21 +12,169 @@ namespace API.Controllers
     [ApiController]
     public class AccountController : ControllerBase
     {
-        private readonly MyContext _context;
+        private AccountRepository _repository;
 
-        public AccountController(MyContext _context)
+        public AccountController(AccountRepository accountRepository)
         {
-            this._context = _context;
+            _repository = accountRepository;
         }
+
 
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("Login")]
-        public IActionResult Login(string email, string password)
+        public ActionResult Login(string email, string password)
         {
             try
             {
+                var item = _repository.Login(email, password);
+
+                return item switch
+                {
+                    1 => Ok(new
+                    {
+                        StatusCode = 200,
+                        Messege = "Data Ada",
+                    }),
+                    2 => Ok(new
+                    {
+                        StatusCode = 200,
+                        Messege = "Data Tidak Ada"
+                    }),
+                    3 => Ok(new
+                    {
+                        StatusCode = 200,
+                        Messege = "Gagal Login"
+                    })
+
+                };
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    StatusCode = 400,
+                    Messege = ex.Message
+                });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Route("Register")]
+        public ActionResult Register(string fullName, string email, DateTime birthDate, string password)
+        {
+            try
+            {
+                var item = _repository.Register(fullName, email, birthDate, password);
+
+                return item switch
+                {
+                    1 => Ok(new
+                        {
+                        StatusCode = 200,
+                        Messege = "Gagal Untuk Register",
+                        }),
+                    2 => Ok(new
+                        {
+                        StatusCode = 200,
+                        Messege = "Berhasil Untuk Register"
+                        }),
+                    3 => Ok(new
+                        {
+                        StatusCode = 200,
+                        Messege = "Gagal Register"
+                    })
+
+                };
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    StatusCode = 400,
+                    Messege = ex.Message
+                });
+            }
+        }
+        
+        [HttpPut]
+        [ValidateAntiForgeryToken]
+        [Route("ChangePassword")]
+        public ActionResult ChangePassword(string email, string password, string newPassword)
+        {
+            try
+            {
+                var item = _repository.ChangePassword(email, password, newPassword);
+
+                return item switch
+                {
+                    1 => Ok(new
+                    {
+                        StatusCode = 200,
+                        Messege = "Berhasil Untuk Change Password",
+                    }),
+                    2 => Ok(new
+                    {
+                        StatusCode = 200,
+                        Messege = "Gagal Untuk Change Password"
+                    }),
+                    3 => Ok(new
+                    {
+                        StatusCode = 200,
+                        Messege = "Gagal Register"
+                    })
+
+                };
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    StatusCode = 400,
+                    Messege = ex.Message
+                });
+            }
+        }
+
+        [HttpPut]
+        [ValidateAntiForgeryToken]
+        [Route("ForgetPassword")]
+        public ActionResult ForgetPassword(string email, string newPassword)
+        {
+            try
+            {
+                var item = _repository.ForgetPassword(email, newPassword);
+
+                return item switch
+                {
+                    1 => Ok(new
+                    {
+                        StatusCode = 200,
+                        Messege = "Berhasil Untuk Change Password",
+                    }),
+                    2 => Ok(new
+                    {
+                        StatusCode = 200,
+                        Messege = "Gagal Untuk Change Password"
+                    })
+                };
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    StatusCode = 400,
+                    Messege = ex.Message
+                });
+            }
+        }
+
+
+
+        // WEB APP YANG LAMA
+        /*
                 var data = _context.Users
                 .Include(x => x.Employee)
                 .Include(x => x.Role)
@@ -55,162 +204,6 @@ namespace API.Controllers
                     });
                 }
                 return Ok();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new
-                {
-                    StatusCode = 400,
-                    Messege = ex.Message
-                });
-            }
-        }
-
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Route("Register")]
-        public IActionResult Register(string fullName, string email, DateTime birthDate, string password)
-        {
-            try
-            {
-                Employee employee = new Employee()
-                {
-                    FullName = fullName,
-                    Email = email,
-                    BirthDate = birthDate
-                };
-                var data = _context.Employees
-                    .SingleOrDefault(x => x.Email.Equals(email));
-                if (data != null)
-                {
-                    return Ok(new
-                    {
-                        StatusCode = 200,
-                        Messege = "Gagal untuk Register"
-                    });
-                }
-                else
-                {
-                    _context.Employees.Add(employee);
-                    var result = _context.SaveChanges();
-                    if (result > 0)
-                    {
-                        var id = _context.Employees.SingleOrDefault(x => x.Email.Equals(email)).Id;
-                        User user = new User()
-                        {
-                            Id = id,
-                            // Hashing
-                            Password = Hashing.HashPassword(password),
-                            RoleId = 1
-                        };
-                        _context.Users.Add(user);
-                        var resultUser = _context.SaveChanges();
-                        if (resultUser > 0)
-                            return Ok(new
-                            {
-                                StatusCode = 200,
-                                Messege = "Berhasil untuk Register"
-                            });
-                    }
-                }
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new
-                {
-                    StatusCode = 400,
-                    Messege = ex.Message
-                });
-            }
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Route("ChangePassword")]
-        public IActionResult ChangePassword(string email, string password, string newPassword)
-        {
-            try
-            {
-                var data = _context.Users
-                    .Include(x => x.Employee)
-                    .SingleOrDefault(x => x.Employee.Email.Equals(email));
-                var result = Hashing.ValidatePassword(password, data.Password);
-                if (result)
-                {
-                    if (data != null)
-                    {
-                        data.Password = Hashing.HashPassword(newPassword);
-                        _context.Entry(data).State = EntityState.Modified;
-
-                        var resultPassword = _context.SaveChanges();
-                        if (resultPassword > 0)
-                        {
-                            return Ok(new
-                            {
-                                StatusCode = 200,
-                                Messege = "Berhasil untuk Change Password"
-                            });
-                        }
-                    }
-                    return Ok(new
-                    {
-                        StatusCode = 200,
-                        Messege = "Gagal untuk Change Password"
-                    });
-                }
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new
-                {
-                    StatusCode = 400,
-                    Messege = ex.Message
-                });
-            }
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Route("ForgetPassword")]
-        public IActionResult ForgetPassword(string email, string newPassword)
-        {
-            try
-            {
-                var data = _context.Users
-                    .Include(x => x.Employee)
-                    .SingleOrDefault(x => x.Employee.Email.Equals(email));
-                if (data != null)
-                {
-                    data.Password = Hashing.HashPassword(newPassword);
-                    _context.Entry(data).State = EntityState.Modified;
-
-                    var result = _context.SaveChanges();
-                    if (result > 0)
-                    {
-                        return Ok(new
-                        {
-                            StatusCode = 200,
-                            Messege = "Berhasil untuk Forget Password"
-                        });
-                    }
-                }
-                return Ok(new
-                {
-                    StatusCode = 200,
-                    Messege = "Gagal untuk Forget Password"
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new
-                {
-                    StatusCode = 400,
-                    Messege = ex.Message
-                });
-            }
-        }
+                */
     }
 }
