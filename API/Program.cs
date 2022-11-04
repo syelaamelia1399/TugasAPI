@@ -10,6 +10,7 @@ builder.Services.AddScoped<DepartmentRepository>();
 builder.Services.AddScoped<EmployeeRepository>();
 builder.Services.AddScoped<RoleRepository>();
 builder.Services.AddScoped<UserRepository>();
+builder.Services.AddScoped<AccountRepository>();
 builder.Services.AddDbContext<MyContext>(option => option.UseSqlServer(builder.Configuration.GetConnectionString("MyConnection")));
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

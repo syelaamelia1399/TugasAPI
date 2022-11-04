@@ -17,23 +17,36 @@ namespace API.Repositories.Data
             _context = context;
         }
 
-        public int Login(string email, string password)
+        public string[]? Login(string email, string password)
         {
             var data = _context.Users
             .Include(x => x.Employee)
             .Include(x => x.Role)
             .SingleOrDefault(x => x.Employee.Email.Equals(email));  //pake hash, langkah awal cek email ada apa gk
 
-            var result = Hashing.ValidatePassword(password, data.Password);
-            if (result)
+            //var result = Hashing.ValidatePassword(password, data.Password);
+            if (data != null)
             {
-                if (data != null)
-                {                    
-                    return 1;
+                var result = Hashing.ValidatePassword(password, data.Password);
+                if (result)
+                {
+                    string[] resultData = new string[4];
+                    resultData[0] = Convert.ToString(data.Id);
+                    resultData[1] = data.Employee.FullName;
+                    resultData[2] = data.Employee.Email;
+                    resultData[3] = data.Role.Name;
+                    
+                    /*
+                    Id = data.Id;
+                    FullName = data.Employee.FullName;
+                    Email = data.Employee.Email;
+                    RoleName = data.Role.Name;
+                    */
+                    return resultData;
                 }
-                return 2;
+                return null;
             }
-            return 3;
+            return null;
         }
 
 

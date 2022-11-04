@@ -4,6 +4,7 @@ using API.Models;
 using API.Repositories.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers
@@ -22,33 +23,46 @@ namespace API.Controllers
 
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         [Route("Login")]
         public ActionResult Login(string email, string password)
         {
             try
             {
                 var item = _repository.Login(email, password);
-
-                return item switch
+                if (item == null)
                 {
-                    1 => Ok(new
+                    return Ok(new
+                    {
+                        StatusCode = 200,
+                        Messege = "Data Tidak Ada, Email atau Password Anda Salah"
+                    });
+                }
+                else
+                {
+                    return Ok(new
                     {
                         StatusCode = 200,
                         Messege = "Data Ada",
-                    }),
-                    2 => Ok(new
+                        Data = new
+                        {
+                            Id = item[0],
+                            FullName = item[1],
+                            Email = item[2],
+                            RoleName = item[3]
+                        }
+                    });
+                }
+                /*
+                return item switch
+                {
+                    resultData => Ok(new
                     {
                         StatusCode = 200,
-                        Messege = "Data Tidak Ada"
-                    }),
-                    3 => Ok(new
-                    {
-                        StatusCode = 200,
-                        Messege = "Gagal Login"
-                    })
+                        Messege = "Data Ada",
 
-                };
+                    })
+                }*/
+                ;
             }
             catch (Exception ex)
             {
@@ -61,7 +75,6 @@ namespace API.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         [Route("Register")]
         public ActionResult Register(string fullName, string email, DateTime birthDate, string password)
         {
@@ -100,7 +113,6 @@ namespace API.Controllers
         }
         
         [HttpPut]
-        [ValidateAntiForgeryToken]
         [Route("ChangePassword")]
         public ActionResult ChangePassword(string email, string password, string newPassword)
         {
@@ -138,8 +150,7 @@ namespace API.Controllers
             }
         }
 
-        [HttpPut]
-        [ValidateAntiForgeryToken]
+        [HttpPost]
         [Route("ForgetPassword")]
         public ActionResult ForgetPassword(string email, string newPassword)
         {
